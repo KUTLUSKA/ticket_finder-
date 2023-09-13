@@ -1,5 +1,6 @@
 import asyncio
 from pyppeteer import launch
+import random
 
 # Example usage:
 url = "https://ebilet.tcddtasimacilik.gov.tr/view/eybis/tnmGenel/tcddWebContent.jsf"
@@ -17,13 +18,28 @@ search_button_id = "btnSeferSorgula"
 
 #tarih bilgisi
 time_id = "trCalGid_input"
-time= "09.09.2023"
+time= "21.09.2023"
 
 
 #seferler
 
-seferler = "//*[@id=\"mainTabView:gidisSeferTablosu:0:j_idt109:0:somVagonTipiGidis1_input\"]"
-
+seferler = ["//*[@id=\"mainTabView:gidisSeferTablosu:0:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:1:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:2:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:3:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:4:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:5:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:6:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:7:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:8:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:9:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:10:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:11:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:12:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:13:j_idt109:0:somVagonTipiGidis1_input\"]",
+            "//*[@id=\"mainTabView:gidisSeferTablosu:14:j_idt109:0:somVagonTipiGidis1_input\"]"
+            
+]
 
 
 
@@ -74,29 +90,54 @@ async def way_to_ticket(url, search_box_id1, text_to_write1, search_button_id, s
     
     #to access button "ARA"
     try:
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(3)
         await page.waitForSelector(f"#{search_button_id}") 
         await page.click(f"#{search_button_id}")   
         print("selected")
     except Exception as e:
         print(f"Failed to search button: {e}")
-
     
+    
+    sefer_sayaç = 0
+    a = True
+    a_sayaç = 0
     try:
-        await asyncio.sleep(3)
-        button_sefer =await page.waitForXPath(seferler) 
-        text_b = await page.evaluate('(button_sefer) => button_sefer.textContent',button_sefer)
-        print('Element Text:', text_b)
-        print("selected")
+        while a:
+            try:
+                for button_sefer in seferler:    
+                    if sefer_sayaç == 14:
+                        sefer_sayaç == 0
+                    else:
+                        pass
+                    await page.reload(timeout = 5000)
+                    await asyncio.sleep(3)
+                    button_sefer = await page.waitForXPath(seferler[sefer_sayaç])
+                    text_b = await page.evaluate('(button_sefer) => button_sefer.textContent',button_sefer)
+                    substring = text_b[23:26]
+                    substring_int = int(substring)
+                    print (substring," boş yer var")
+
+
+                    if substring_int > 3:
+                        print("ticket find")
+                        a = False    
+                        sefer_sayaç += 1
+                    else:
+                        print(a_sayaç,". try still searching")
+                        sefer_sayaç+=1
+        
+        
+            except Exception as e:
+                print(f"Failed to search button: {e}")
     except Exception as e:
-        print(f"Failed to search button: {e}")
+                print(f"Failed to search button: {e}")
 
 
 
 
 
 
-    #to see what we dıne last
+    #to see what we done last
     await asyncio.sleep(10)
     await browser.close()
 
