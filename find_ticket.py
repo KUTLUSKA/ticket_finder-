@@ -18,7 +18,7 @@ search_button_id = "btnSeferSorgula"
 
 #tarih bilgisi
 time_id = "trCalGid_input"
-time= "21.09.2023"
+time= "15.09.2023"
 
 
 #seferler
@@ -41,10 +41,32 @@ seferler = ["//*[@id=\"mainTabView:gidisSeferTablosu:0:j_idt109:0:somVagonTipiGi
             
 ]
 
+#seferler buttons
+
+seferler_button = ['#mainTabView\:gidisSeferTablosu\:0\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:1\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:2\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:3\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:4\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:5\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:6\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:7\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:8\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:9\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:10\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:11\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:12\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:13\:j_idt117',
+                   '#mainTabView\:gidisSeferTablosu\:14\:j_idt117'
+                   
+]
+
+next_button = "#mainTabView\:btnDevam44"
 
 
 
-async def way_to_ticket(url, search_box_id1, text_to_write1, search_button_id, search_box_id2, text_to_write2, time_id, time ,seferler):
+
+async def way_to_ticket(url, search_box_id1, text_to_write1, search_button_id, search_box_id2, text_to_write2, time_id, time ,seferler, next_button):
     #to open browser
     browser = await launch({"headless": False, "args": ["--start-maximized"]})  
     page = await browser.newPage()
@@ -109,24 +131,33 @@ async def way_to_ticket(url, search_box_id1, text_to_write1, search_button_id, s
                         sefer_sayaç == 0
                     else:
                         pass
-                    await page.reload(timeout = 5000)
+                    
                     await asyncio.sleep(3)
                     button_sefer = await page.waitForXPath(seferler[sefer_sayaç])
                     text_b = await page.evaluate('(button_sefer) => button_sefer.textContent',button_sefer)
-                    substring = text_b[23:26]
+                    substring = text_b[23:25]
                     substring_int = int(substring)
                     print (substring," boş yer var")
 
 
-                    if substring_int > 3:
-                        print("ticket find")
-                        a = False    
-                        sefer_sayaç += 1
+                    if substring_int >= 3:
+                        print("ticket find sefer",a_sayaç,"'dan yer bakılıyor...")
+                        try:
+                            await page.waitForSelector(seferler_button[sefer_sayaç], timeout=5000)  
+                            await page.click(seferler_button[sefer_sayaç])  # Click the button with the specified class
+                            print("Button clicked successfully!")
+                            await asyncio.sleep(2)
+                            await page.click(next_button)
+                        except Exception as e:
+                            print(f"Failed to click the button: {e}")
+
+                        
                     else:
                         print(a_sayaç,". try still searching")
                         sefer_sayaç+=1
+                        await page.reload(timeout = 4000)
         
-        
+
             except Exception as e:
                 print(f"Failed to search button: {e}")
     except Exception as e:
@@ -142,4 +173,4 @@ async def way_to_ticket(url, search_box_id1, text_to_write1, search_button_id, s
     await browser.close()
 
 #it starts everything
-asyncio.get_event_loop().run_until_complete(way_to_ticket(url, search_box_id1, text_to_write1, search_button_id,search_box_id2,text_to_write2, time_id,time, seferler))
+asyncio.get_event_loop().run_until_complete(way_to_ticket(url, search_box_id1, text_to_write1, search_button_id,search_box_id2,text_to_write2, time_id,time, seferler, next_button))
