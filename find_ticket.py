@@ -1,28 +1,74 @@
 import asyncio
 from pyppeteer import launch
-import random
+import winsound
 
-# Example usage:
+async def way_to_ticket(url, search_box_id1, text_to_write1, search_button_id, search_box_id2, text_to_write2, time_id, time ,seferler, next_button):
+    browser = await launch({"headless": False, "args": ["--start-maximized"]})
+    page = await browser.newPage()
+    await page.goto(url, {'waitUntil': 'networkidle2'})
+    await page.setViewport({"width": 1920, "height": 1080})
+    
+    # Fill the departure, destination and date fields
+    await page.type(f"#{search_box_id1}", text_to_write1)
+    await page.type(f"#{search_box_id2}", text_to_write2)
+    await page.click(f"#{time_id}", clickCount=3)
+    await page.keyboard.press('Backspace')
+    await page.type(f"#{time_id}", time)
+    await page.click('.ui-datepicker-close')  # Assuming this closes the date picker
+
+    # Click the search button
+    await asyncio.sleep(2)  # Allow any AJAX/Javascript to complete if necessary
+    await page.click(f"#{search_button_id}")
+    
+
+    while True:
+        found_ticket = False
+
+        # Iterate through all possible train options
+        for index, sefer in enumerate(seferler):
+            try:
+                button_sefer = await page.waitForXPath(sefer, timeout=5000)
+                text_b = await page.evaluate('(element) => element.textContent', button_sefer)
+                seats_available = int(text_b[23:25])  # Extracting available seats from the text
+
+                print(f"{seats_available} seats available for option {index + 1}")
+
+                if seats_available >= 3:
+                    print(f"Ticket found for option {index + 1}, booking now...")
+                    await page.click(seferler_button[index])
+                    await asyncio.sleep(2)
+                    await page.click(next_button)
+
+                    found_ticket = True
+                    winsound.Beep(1000, 5000)
+                    winsound.Beep(1000, 5000)
+                    winsound.Beep(1000, 5000)
+                    
+            except Exception as e:
+                print(f"Error checking sefer {index + 1}: {e}")
+
+        if found_ticket:
+            print("Successfully booked a ticket.")
+            break  # Break out of the while loop if a ticket is found and booked
+
+        else:
+            print("No available tickets found, reloading...")
+            await page.reload({'waitUntil': 'networkidle2'})
+            await asyncio.sleep(5)  # Wait for some time before the next iteration
+
+    await asyncio.sleep(10)
+    await browser.close()
+
+# Usage
 url = "https://ebilet.tcddtasimacilik.gov.tr/view/eybis/tnmGenel/tcddWebContent.jsf"
-
-#arravie
-search_box_id1 = "nereden"  
-text_to_write1 = "Ankara Gar" 
-
-#varış
+search_box_id1 = "nereden"
+text_to_write1 = "İstanbul(Söğütlüçeşme)"
 search_box_id2 = "nereye"
-text_to_write2 = "İstanbul(Söğütlüçeşme)"
-
-#arama butonu
+text_to_write2 = "ERYAMAN YHT"
 search_button_id = "btnSeferSorgula"
-
-#tarih bilgisi
 time_id = "trCalGid_input"
-time= "15.09.2023"
-
-
-#seferler
-
+time = "07.05.2024"
+# Update XPath and CSS selectors based on actual values from the website
 seferler = ["//*[@id=\"mainTabView:gidisSeferTablosu:0:j_idt109:0:somVagonTipiGidis1_input\"]",
             "//*[@id=\"mainTabView:gidisSeferTablosu:1:j_idt109:0:somVagonTipiGidis1_input\"]",
             "//*[@id=\"mainTabView:gidisSeferTablosu:2:j_idt109:0:somVagonTipiGidis1_input\"]",
@@ -37,12 +83,8 @@ seferler = ["//*[@id=\"mainTabView:gidisSeferTablosu:0:j_idt109:0:somVagonTipiGi
             "//*[@id=\"mainTabView:gidisSeferTablosu:11:j_idt109:0:somVagonTipiGidis1_input\"]",
             "//*[@id=\"mainTabView:gidisSeferTablosu:12:j_idt109:0:somVagonTipiGidis1_input\"]",
             "//*[@id=\"mainTabView:gidisSeferTablosu:13:j_idt109:0:somVagonTipiGidis1_input\"]",
-            "//*[@id=\"mainTabView:gidisSeferTablosu:14:j_idt109:0:somVagonTipiGidis1_input\"]"
             
 ]
-
-#seferler buttons
-
 seferler_button = ['#mainTabView\:gidisSeferTablosu\:0\:j_idt117',
                    '#mainTabView\:gidisSeferTablosu\:1\:j_idt117',
                    '#mainTabView\:gidisSeferTablosu\:2\:j_idt117',
@@ -57,120 +99,10 @@ seferler_button = ['#mainTabView\:gidisSeferTablosu\:0\:j_idt117',
                    '#mainTabView\:gidisSeferTablosu\:11\:j_idt117',
                    '#mainTabView\:gidisSeferTablosu\:12\:j_idt117',
                    '#mainTabView\:gidisSeferTablosu\:13\:j_idt117',
-                   '#mainTabView\:gidisSeferTablosu\:14\:j_idt117'
                    
 ]
-
 next_button = "#mainTabView\:btnDevam44"
 
+asyncio.get_event_loop().run_until_complete(way_to_ticket(url, search_box_id1, text_to_write1, search_button_id, search_box_id2, text_to_write2, time_id, time, seferler, next_button))
 
 
-
-async def way_to_ticket(url, search_box_id1, text_to_write1, search_button_id, search_box_id2, text_to_write2, time_id, time ,seferler, next_button):
-    #to open browser
-    browser = await launch({"headless": False, "args": ["--start-maximized"]})  
-    page = await browser.newPage()
-    await page.goto(url,{'waitUntil': 'networkidle2'})
-    await page.setViewport({"width": 1920, "height": 1080})
-    
-    #to access search box "nereden"
-    try:
-        await page.waitForSelector(f"#{search_box_id1}", timeout=5000)  
-        await page.type(f"#{search_box_id1}", text_to_write1)  
-        print(f"Typed '{text_to_write1}' in the 'nereden' search box successfully!")
-    except Exception as e:
-        print(f"Failed to write in the 'nereden' search box: {e}")
-    
-    #to access search box "nereye"
-    try:
-        await page.waitForSelector(f"#{search_box_id2}", timeout=5000)  
-        await page.type(f"#{search_box_id2}", text_to_write2)  
-        print(f"Typed '{text_to_write2}' in the 'nereye' search box successfully!")
-    except Exception as e:
-        print(f"Failed to write in the 'nereye' search box: {e}")
-
-
-    #to access search box "tarih"
-    try:
-        await page.waitForSelector(f"#{time_id}", timeout=5000)  
-        await page.click(f"#{time_id}", clickCount=3)  # Select all text in the input field
-        await page.evaluate(f'document.querySelector("#{time_id}").value = "";')  # Clear the input field's value
-        await page.type(f"#{time_id}", time)  
-        print(f"Typed '{time}' in the 'time' search box successfully!")
-    except Exception as e:
-        print(f"Failed to write in the 'time' search box: {e}")
-
-    #to access search box "tarih"'s close button
-    try:
-        await page.waitForSelector('.ui-datepicker-close', timeout=5000)  
-        await page.click('.ui-datepicker-close')  # Click the button with the specified class
-        print("Button clicked successfully!")
-    except Exception as e:
-        print(f"Failed to click the button: {e}")
-
-    
-    
-    #to access button "ARA"
-    try:
-        await asyncio.sleep(3)
-        await page.waitForSelector(f"#{search_button_id}") 
-        await page.click(f"#{search_button_id}")   
-        print("selected")
-    except Exception as e:
-        print(f"Failed to search button: {e}")
-    
-    
-    sefer_sayaç = 0
-    a = True
-    a_sayaç = 0
-    try:
-        while a:
-            try:
-                for button_sefer in seferler:    
-                    if sefer_sayaç == 14:
-                        sefer_sayaç == 0
-                    else:
-                        pass
-                    
-                    await asyncio.sleep(3)
-                    button_sefer = await page.waitForXPath(seferler[sefer_sayaç])
-                    text_b = await page.evaluate('(button_sefer) => button_sefer.textContent',button_sefer)
-                    substring = text_b[23:25]
-                    substring_int = int(substring)
-                    print (substring," boş yer var")
-
-
-                    if substring_int >= 3:
-                        print("ticket find sefer",a_sayaç,"'dan yer bakılıyor...")
-                        try:
-                            await page.waitForSelector(seferler_button[sefer_sayaç], timeout=5000)  
-                            await page.click(seferler_button[sefer_sayaç])  # Click the button with the specified class
-                            print("Button clicked successfully!")
-                            await asyncio.sleep(2)
-                            await page.click(next_button)
-                        except Exception as e:
-                            print(f"Failed to click the button: {e}")
-
-                        
-                    else:
-                        print(a_sayaç,". try still searching")
-                        sefer_sayaç+=1
-                        await page.reload(timeout = 4000)
-        
-
-            except Exception as e:
-                print(f"Failed to search button: {e}")
-    except Exception as e:
-                print(f"Failed to search button: {e}")
-
-
-
-
-
-
-    #to see what we done last
-    await asyncio.sleep(10)
-    await browser.close()
-
-#it starts everything
-asyncio.get_event_loop().run_until_complete(way_to_ticket(url, search_box_id1, text_to_write1, search_button_id,search_box_id2,text_to_write2, time_id,time, seferler, next_button))
